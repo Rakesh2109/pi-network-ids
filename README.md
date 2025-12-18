@@ -109,13 +109,13 @@ du -sh pcap/ suricata/logs/ zeek/logs/
 
 ## 📝 License
 
-MIT License - Copyright (c) 2025 Rakesh (rakeshry@example.com)
+MIT License - Copyright (c) 2025 Rakesh Reddy Yakakti (yrakesh2109@gmail.com)
 
 See [LICENSE](LICENSE) file for details.
 
 ## 👥 Author
 
-**Rakesh** - rakeshry@example.com
+**Rakesh Reddy Yakakti** - yrakesh2109@gmail.com
 
 ## 🤝 Contributing
 
