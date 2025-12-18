@@ -58,6 +58,30 @@ services:
       - monitoring
     restart: unless-stopped
 
+  # Telegraf - System and Docker metrics collector
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    user: "0:985"
+    environment:
+      - TZ=Europe/Oslo
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+      - HOST_ETC=/host/etc
+      - HOST_MOUNT_PREFIX=/host
+    volumes:
+      - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/host/sys:ro
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /:/host:ro
+    networks:
+      - monitoring
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
   # Loki - Log aggregation
   loki:
     image: grafana/loki:latest
@@ -155,11 +179,11 @@ services:
     restart: unless-stopped
     privileged: true
 
-  # Tcpdump - rolling PCAP capture for ALL hotspot traffic (wlan0) - 6x50MB rotating files
+  # Tcpdump - rolling PCAP capture for ALL hotspot traffic (wlan0) - 24x100MB rotating files (1 hour rotation)
   tcpdump:
     image: nicolaka/netshoot:latest
     container_name: tcpdump
-    command: tcpdump -i wlan0 -G 300 -W 6 -C 50 -w /pcap/trace-%Y%m%d-%H%M%S.pcap
+    command: tcpdump -i wlan0 -G 3600 -W 24 -C 100 -w /pcap/trace-%Y%m%d-%H%M%S.pcap
     network_mode: host
     cap_add:
       - NET_ADMIN

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="10">
+    <meta http-equiv="refresh" content="300">
     <title>Network Traffic Monitor - Live Updates</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
@@ -711,13 +711,13 @@
             });
         }
 
-        // Auto-refresh every 10 seconds (show live updates)
+        // Auto-refresh every 5 minutes
         setInterval(() => {
             loadSuricataAll();
             loadZeekAll();
             loadTcpdumpStats();
             loadTcpdumpAllTraffic();
-        }, 10000);
+        }, 300000);
     </script>
 </body>
 </html>
