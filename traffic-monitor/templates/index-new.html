@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+    <title>Network Traffic Monitor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #e6e6e6;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #b0bec5; font-size: 0.9em; }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background: rgba(37, 43, 58, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #81c784;
+            border-bottom: 2px solid #81c784;
+            padding-bottom: 10px;
+        }
+        .refresh-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .refresh-btn:hover { background: #45a049; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th {
+            background: #2d3748;
+            color: #fff;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #2d3748;
+        }
+        tr:hover { background: rgba(255,255,255,0.05); }
+        .ip-address { color: #4fc3f7; font-weight: bold; }
+        .severity-high { color: #f44336; font-weight: bold; }
+        .severity-medium { color: #ff9800; font-weight: bold; }
+        .severity-low { color: #4caf50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌐 Network Traffic Monitor</h1>
+        <p class="subtitle">Suricata IDS/IPS & Zeek Network Analysis - Hotspot Network (wlan0)</p>
+    </div>
+
+    <div class="container">
+        <!-- Suricata Panel -->
+        <div class="panel">
+            <h2>🛡️ Suricata - All Network Events</h2>
+            <button class="refresh-btn" onclick="loadSuricataAll()">Refresh</button>
+            <div style="overflow-x: auto; max-height: 600px;">
+                <table id="suricata-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Source IP:Port</th>
+                            <th>Dest IP:Port</th>
+                            <th>Protocol</th>
+                            <th>Severity</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suricata-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Zeek Panel -->
+        <div class="panel">
+            <h2>🔍 Zeek - All Network Analysis</h2>
+            <button class="refresh-btn" onclick="loadZeekAll()">Refresh</button>
+            <div style="overflow-x: auto; max-height: 600px;">
+                <table id="zeek-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Source IP:Port</th>
+                            <th>Dest IP:Port</th>
+                            <th>Protocol</th>
+                            <th>Details</th>
+                            <th>Bytes/Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zeek-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadSuricataAll() {
+            fetch('/api/suricata/all')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('suricata-tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #95a5a6;">No Suricata events yet</td></tr>';
+                        return;
+                    }
+                    data.forEach(event => {
+                        const tr = document.createElement('tr');
+                        const eventType = event.event_type || 'unknown';
+                        
+                        let timeDisplay = 'N/A';
+                        if (event.timestamp) {
+                            try {
+                                const date = new Date(event.timestamp);
+                                if (!isNaN(date.getTime())) {
+                                    timeDisplay = date.toLocaleString();
+                                } else {
+                                    timeDisplay = event.timestamp;
+                                }
+                            } catch (e) {
+                                timeDisplay = event.timestamp;
+                            }
+                        }
+                        
+                        let severityDisplay = '-';
+                        if (eventType === 'alert' && event.alert && event.alert.severity !== undefined) {
+                            const severity = event.alert.severity;
+                            const severityClass = severity >= 3 ? 'severity-high' : severity >= 2 ? 'severity-medium' : 'severity-low';
+                            severityDisplay = `<span class="alert-severity ${severityClass}">${severity}</span>`;
+                        }
+                        
+                        const proto = event.proto || '-';
+                        
+                        let details = '';
+                        if (eventType === 'alert' && event.alert && event.alert.signature) {
+                            details = event.alert.signature;
+                        } else if (eventType === 'flow') {
+                            const pkts = event.flow ? `${event.flow.pkts_toserver}↑/${event.flow.pkts_toclient}↓ pkts` : '';
+                            const bytes = event.flow ? `${event.flow.bytes_toserver}↑/${event.flow.bytes_toclient}↓ bytes` : '';
+                            details = `Flow: ${pkts} ${bytes}`;
+                        } else if (eventType === 'netflow') {
+                            const pkts = event.netflow ? `${event.netflow.pkts} pkts` : '';
+                            const bytes = event.netflow ? `${event.netflow.bytes} bytes` : '';
+                            details = `NetFlow: ${pkts} ${bytes}`;
+                        } else if (eventType === 'http') {
+                            details = `${event.http?.http_method || ''} ${event.http?.hostname || ''}${event.http?.url || ''}`;
+                        } else if (eventType === 'dns') {
+                            details = `${event.dns?.type || ''} ${event.dns?.rrname || ''}`;
+                        } else if (eventType === 'tls') {
+                            details = `${event.tls?.sni || event.tls?.subject || 'TLS handshake'}`;
+                        } else if (eventType === 'ssh') {
+                            details = `SSH connection`;
+                        } else if (eventType === 'files') {
+                            details = `${event.fileinfo?.filename || 'File transfer'}`;
+                        } else {
+                            details = eventType;
+                        }
+                        
+                        tr.innerHTML = `
+                            <td style="font-size: 11px;">${timeDisplay}</td>
+                            <td style="color: #81c784; font-weight: bold; font-size: 11px;">${eventType.toUpperCase()}</td>
+                            <td class="ip-address">${event.src_ip || 'N/A'}${event.src_port ? ':' + event.src_port : ''}</td>
+                            <td class="ip-address">${event.dest_ip || 'N/A'}${event.dest_port ? ':' + event.dest_port : ''}</td>
+                            <td style="font-size: 11px;">${proto.toUpperCase()}</td>
+                            <td>${severityDisplay}</td>
+                            <td style="font-size: 11px;">${details}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error('Error loading Suricata:', err));
+        }
+
+        function loadZeekAll() {
+            fetch('/api/zeek/all')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('zeek-tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #95a5a6;">No Zeek logs yet</td></tr>';
+                        return;
+                    }
+                    data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const timeDisplay = item.ts ? new Date(parseFloat(item.ts) * 1000).toLocaleString() : 'N/A';
+                        
+                        const typeColors = {
+                            'connection': '#4caf50',
+                            'http': '#2196f3',
+                            'dns': '#ff9800',
+                            'ssl': '#9c27b0'
+                        };
+                        const typeColor = typeColors[item.type] || '#95a5a6';
+                        
+                        const proto = item.proto ? item.proto.toUpperCase() : '-';
+                        
+                        let bytesDuration = '-';
+                        if (item.type === 'connection') {
+                            bytesDuration = `${item.orig_bytes || 0}↑/${item.resp_bytes || 0}↓ bytes | ${item.duration ? parseFloat(item.duration).toFixed(2) + 's' : '-'}`;
+                        } else if (item.type === 'http') {
+                            bytesDuration = `HTTP ${item.method || ''}`;
+                        } else if (item.type === 'dns') {
+                            bytesDuration = `DNS ${item.qtype || ''}`;
+                        } else if (item.type === 'ssl') {
+                            bytesDuration = 'SSL/TLS';
+                        }
+                        
+                        tr.innerHTML = `
+                            <td style="font-size: 11px;">${timeDisplay}</td>
+                            <td style="color: ${typeColor}; font-weight: bold; font-size: 11px;">${(item.type || '').toUpperCase()}</td>
+                            <td class="ip-address">${item.src_ip || 'N/A'}${item.src_port ? ':' + item.src_port : ''}</td>
+                            <td class="ip-address">${item.dst_ip || 'N/A'}${item.dst_port ? ':' + item.dst_port : ''}</td>
+                            <td style="font-size: 11px;">${proto}</td>
+                            <td style="font-size: 11px;">${item.details || '-'}</td>
+                            <td style="font-size: 11px;">${bytesDuration}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error('Error loading Zeek:', err));
+        }
+
+        // Initial load
+        loadSuricataAll();
+        loadZeekAll();
+
+        // Auto-refresh every 1 minute
+        setInterval(() => {
+            loadSuricataAll();
+            loadZeekAll();
+        }, 60000);
+    </script>
+</body>
+</html>
+

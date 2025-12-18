@@ -1,0 +1,77 @@
+Severity Explanation - Suricata Alerts
+=======================================
+
+SEVERITY LEVELS:
+----------------
+
+Severity is ONLY shown for ALERT events (actual security threats detected).
+
+For normal traffic (flow, netflow, stats), severity shows "-" (not applicable).
+
+ALERT SEVERITY LEVELS:
+---------------------
+
+1 = LOW SEVERITY (Green badge)
+   - Minor security issues
+   - Informational alerts
+   - Suspicious but not dangerous
+
+2 = MEDIUM SEVERITY (Orange badge)
+   - Moderate security concerns
+   - Potentially malicious activity
+   - Should be reviewed
+
+3 = HIGH SEVERITY (Red badge)
+   - Critical security threats
+   - Active attacks detected
+   - Immediate attention required
+
+4 = CRITICAL SEVERITY (Red badge)
+   - Severe security breaches
+   - Active exploitation attempts
+   - System compromise attempts
+
+WHAT YOU'RE SEEING:
+------------------
+
+Currently showing "3" because the code was incorrectly parsing.
+NOW FIXED:
+- Flow events: Show "-" (no severity, normal traffic)
+- Netflow events: Show "-" (no severity, normal traffic)
+- Alert events: Show actual severity (1-4) if attack detected
+
+YOUR CURRENT DATA:
+-----------------
+- Flow/Netflow events: These are NORMAL traffic
+  → Severity: "-" (no threat)
+  → These are your ESP32 sensors connecting to MQTT
+  
+- If you see severity 1-4: That means Suricata detected an attack!
+
+NO ALERTS = GOOD:
+---------------
+If you see "-" for severity, it means:
+✅ No security threats detected
+✅ Network traffic is normal
+✅ Your network is SAFE
+
+EXAMPLES:
+--------
+
+Normal Traffic (Flow):
+  Severity: "-"
+  Meaning: Normal connection, no threat
+
+Security Alert:
+  Severity: 3 (RED)
+  Meaning: HIGH severity threat detected!
+  Action: Review immediately
+
+SUMMARY:
+-------
+✅ Severity "-" = Normal traffic (good!)
+⚠️ Severity 1-2 = Low/Medium threat (review)
+🔴 Severity 3-4 = High/Critical threat (act immediately!)
+
+Your current traffic shows "-" because it's all normal network flow!
+

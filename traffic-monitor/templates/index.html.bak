@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+    <title>Network Traffic Monitor - Suricata & Zeek</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1419;
+            color: #e6e6e6;
+            padding: 20px;
+        }
+        .header {
+            background: #1a1f2e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        h1 { color: #4fc3f7; margin-bottom: 10px; font-size: 32px; }
+        h1 .refresh-info { font-size: 14px; color: #888; margin-left: 15px; font-weight: normal; }
+        .subtitle { color: #888; }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background: #1a1f2e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .panel h2 {
+            color: #81c784;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2d3748;
+            padding-bottom: 10px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #252b3a;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        .stat-value.drops {
+            color: #f44336;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th {
+            background: #252b3a;
+            padding: 10px;
+            text-align: left;
+            color: #81c784;
+            border-bottom: 2px solid #2d3748;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #2d3748;
+            font-family: 'Courier New', monospace;
+        }
+        /* Make Source and Dest IP columns stand out */
+        td:nth-child(2), td:nth-child(3) {
+            color: #4fc3f7;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        tr:hover { background: #252b3a; }
+        .alert-severity {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .severity-high { background: #f44336; color: white; }
+        .severity-medium { background: #ff9800; color: white; }
+        .severity-low { background: #ffc107; color: #000; }
+        .refresh-btn {
+            background: #4fc3f7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .refresh-btn:hover { background: #29b6f6; }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-online { background: #4caf50; }
+        .status-offline { background: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌐 Network Traffic Monitor <span class="refresh-info">(Auto-refresh: 1 min)</span></h1>
+        <p class="subtitle">Suricata IDS/IPS & Zeek Network Analysis - Hotspot Network (wlan0 - 192.168.4.0/24)</p>
+    </div>
+
+    <div class="container">
+        <!-- Suricata Panel -->
+    <div class="panel">
+        <h2>🛡️ Suricata Network Events (All Types)</h2>
+        <button class="refresh-btn" onclick="loadSuricataData()">Refresh</button>
+        <div class="stats" id="suricata-stats"></div>
+        <div style="margin-bottom: 10px;">
+            <label style="color: #95a5a6; font-size: 12px;">Filter by Type: </label>
+            <select id="event-type-filter" onchange="loadSuricataData()" style="background: #252b3a; color: #e6e6e6; border: 1px solid #2d3748; padding: 5px; border-radius: 4px;">
+                <option value="all">All Events</option>
+                <option value="alert">Alerts</option>
+                <option value="flow">Flow</option>
+                <option value="netflow">NetFlow</option>
+                <option value="http">HTTP</option>
+                <option value="dns">DNS</option>
+                <option value="tls">TLS/SSL</option>
+                <option value="ssh">SSH</option>
+                <option value="files">Files</option>
+            </select>
+        </div>
+        <div style="overflow-x: auto; max-height: 400px;">
+            <table id="suricata-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Source IP:Port</th>
+                        <th>Dest IP:Port</th>
+                        <th>Severity</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="suricata-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+        <!-- Zeek Panel -->
+        <div class="panel">
+            <h2>🔍 Zeek Connections</h2>
+            <button class="refresh-btn" onclick="loadZeekData()">Refresh</button>
+            <div style="overflow-x: auto; max-height: 400px;">
+                <table id="zeek-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Source</th>
+                            <th>Destination</th>
+                            <th>Protocol</th>
+                            <th>Duration</th>
+                            <th>Bytes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zeek-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h2>📊 Zeek HTTP Requests</h2>
+            <button class="refresh-btn" onclick="loadHTTPData()">Refresh</button>
+            <div style="overflow-x: auto; max-height: 300px;">
+                <table id="http-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Source</th>
+                            <th>Host</th>
+                            <th>Method</th>
+                            <th>URI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="http-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>🌐 Zeek DNS Queries</h2>
+            <button class="refresh-btn" onclick="loadDNSData()">Refresh</button>
+            <div style="overflow-x: auto; max-height: 300px;">
+                <table id="dns-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Source</th>
+                            <th>Server</th>
+                            <th>Query</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dns-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>🔒 Zeek SSL/TLS Connections</h2>
+        <button class="refresh-btn" onclick="loadSSLData()">Refresh</button>
+        <div style="overflow-x: auto; max-height: 300px;">
+            <table id="ssl-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Client</th>
+                        <th>Server</th>
+                        <th>Server Name</th>
+                        <th>Subject</th>
+                    </tr>
+                </thead>
+                <tbody id="ssl-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function loadSuricataData() {
+            const filterType = document.getElementById('event-type-filter').value;
+            const url = filterType === 'all' ? '/api/suricata/alerts' : `/api/suricata/${filterType}`;
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('suricata-tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(alert => {
+                        const tr = document.createElement('tr');
+                        const eventType = alert.event_type || 'unknown';
+                        
+                        // Fix timestamp parsing (ISO 8601 format)
+                        let timeDisplay = 'N/A';
+                        if (alert.timestamp) {
+                            try {
+                                const date = new Date(alert.timestamp);
+                                if (!isNaN(date.getTime())) {
+                                    timeDisplay = date.toLocaleString();
+                                } else {
+                                    timeDisplay = alert.timestamp; // Fallback to raw timestamp
+                                }
+                            } catch (e) {
+                                timeDisplay = alert.timestamp;
+                            }
+                        }
+                        
+                        // Severity: Only show for alerts, use '-' for flow/netflow
+                        let severityDisplay = '-';
+                        if (eventType === 'alert' && alert.alert && alert.alert.severity !== undefined) {
+                            const severity = alert.alert.severity;
+                            const severityClass = severity >= 3 ? 'severity-high' : severity >= 2 ? 'severity-medium' : 'severity-low';
+                            severityDisplay = `<span class="alert-severity ${severityClass}">${severity}</span>`;
+                        }
+                        
+                        // Determine details based on event type
+                        let details = '';
+                        if (eventType === 'alert' && alert.alert && alert.alert.signature) {
+                            details = alert.alert.signature;
+                        } else if (eventType === 'flow') {
+                            const pkts = alert.flow ? `${alert.flow.pkts_toserver}↑/${alert.flow.pkts_toclient}↓ pkts` : '';
+                            const bytes = alert.flow ? `${alert.flow.bytes_toserver}↑/${alert.flow.bytes_toclient}↓ bytes` : '';
+                            details = `${pkts} ${bytes}`;
+                        } else if (eventType === 'netflow') {
+                            const pkts = alert.netflow ? `${alert.netflow.pkts} pkts` : '';
+                            const bytes = alert.netflow ? `${alert.netflow.bytes} bytes` : '';
+                            details = `${pkts} ${bytes}`;
+                        } else if (eventType === 'http') {
+                            details = `${alert.http?.http_method || ''} ${alert.http?.hostname || ''}${alert.http?.url || ''}`;
+                        } else if (eventType === 'dns') {
+                            details = `${alert.dns?.type || ''} ${alert.dns?.rrname || ''}`;
+                        } else if (eventType === 'tls') {
+                            details = `${alert.tls?.subject || ''} ${alert.tls?.sni || ''}`;
+                        } else if (eventType === 'ssh') {
+                            details = `SSH connection`;
+                        } else if (eventType === 'files') {
+                            details = `${alert.fileinfo?.filename || 'File transfer'}`;
+                        } else {
+                            details = JSON.stringify(alert).substring(0, 100);
+                        }
+                        
+                        tr.innerHTML = `
+                            <td>${timeDisplay}</td>
+                            <td style="color: #81c784; font-weight: bold;">${eventType.toUpperCase()}</td>
+                            <td style="color: #4fc3f7; font-weight: bold; font-size: 14px;">${alert.src_ip || 'N/A'}${alert.src_port ? ':' + alert.src_port : ''}</td>
+                            <td style="color: #4fc3f7; font-weight: bold; font-size: 14px;">${alert.dest_ip || 'N/A'}${alert.dest_port ? ':' + alert.dest_port : ''}</td>
+                            <td>${severityDisplay}</td>
+                            <td style="font-size: 12px;">${details}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+
+            fetch('/api/suricata/stats')
+                .then(r => r.json())
+                .then(stats => {
+                    const statsDiv = document.getElementById('suricata-stats');
+                    statsDiv.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.kernel_packets || '0'}</div>
+                            <div class="stat-label">Packets</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.kernel_drops || '0'}</div>
+                            <div class="stat-label">Drops</div>
+                        </div>
+                    `;
+                });
+        }
+
+        function loadZeekData() {
+            fetch('/api/zeek/conn')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('zeek-tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(conn => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${new Date(parseFloat(conn.ts) * 1000).toLocaleString()}</td>
+                            <td>${conn.id_orig_h}:${conn.id_orig_p}</td>
+                            <td>${conn.id_resp_h}:${conn.id_resp_p}</td>
+                            <td>${conn.proto}</td>
+                            <td>${parseFloat(conn.duration).toFixed(2)}s</td>
+                            <td>${conn.orig_bytes} / ${conn.resp_bytes}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function loadHTTPData() {
+            fetch('/api/zeek/http')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('http-tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #95a5a6;">No HTTP requests yet (will appear when web traffic occurs)</td></tr>';
+                        return;
+                    }
+                    data.forEach(req => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${new Date(parseFloat(req.ts) * 1000).toLocaleString()}</td>
+                            <td>${req.id_orig_h}:${req.id_orig_p}</td>
+                            <td>${req.host}</td>
+                            <td>${req.method}</td>
+                            <td>${req.uri.substring(0, 50)}${req.uri.length > 50 ? '...' : ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function loadDNSData() {
+            fetch('/api/zeek/dns')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('dns-tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #95a5a6;">No DNS queries yet (will appear when DNS traffic occurs)</td></tr>';
+                        return;
+                    }
+                    data.forEach(req => {
+                        const tr = document.createElement('tr');
+                        const timeDisplay = req.ts ? new Date(parseFloat(req.ts) * 1000).toLocaleString() : 'N/A';
+                        tr.innerHTML = `
+                            <td>${timeDisplay}</td>
+                            <td style="color: #4fc3f7; font-weight: bold;">${req.id_orig_h || 'N/A'}</td>
+                            <td style="color: #4fc3f7; font-weight: bold;">${req.id_resp_h || 'N/A'}</td>
+                            <td>${req.query || 'N/A'}</td>
+                            <td>${req.qtype || 'N/A'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function loadSSLData() {
+            fetch('/api/zeek/ssl')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('ssl-tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #95a5a6;">No SSL/TLS connections yet (will appear when HTTPS traffic occurs)</td></tr>';
+                        return;
+                    }
+                    data.forEach(ssl => {
+                        const tr = document.createElement('tr');
+                        const timeDisplay = ssl.ts ? new Date(parseFloat(ssl.ts) * 1000).toLocaleString() : 'N/A';
+                        tr.innerHTML = `
+                            <td>${timeDisplay}</td>
+                            <td style="color: #4fc3f7; font-weight: bold;">${ssl.id_orig_h || 'N/A'}</td>
+                            <td style="color: #4fc3f7; font-weight: bold;">${ssl.id_resp_h || 'N/A'}</td>
+                            <td>${ssl.server_name || 'N/A'}</td>
+                            <td style="font-size: 11px;">${ssl.subject ? ssl.subject.substring(0, 50) : 'N/A'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Initial load
+        loadSuricataData();
+        loadZeekData();
+        loadHTTPData();
+        loadDNSData();
+        loadSSLData();
+
+        // Auto-refresh every 1 minute (60 seconds)
+        setInterval(() => {
+            loadSuricataData();
+            loadZeekData();
+            loadHTTPData();
+            loadDNSData();
+            loadSSLData();
+        }, 60000);
+    </script>
+</body>
+</html>
+

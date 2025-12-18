@@ -1,0 +1,35 @@
+Service Access Information
+===========================
+
+Your services are now accessible from anywhere via LAN IP:
+
+LAN IP Address: 128.39.201.47 (or 128.39.201.48)
+
+Grafana Dashboard:
+  URL: http://128.39.201.47:3000
+  Username: admin
+  Password: admin123
+  Access: Accessible from anywhere on your network
+
+Traffic Monitor Dashboard:
+  URL: http://128.39.201.47:8080
+  Access: Accessible from anywhere on your network
+
+InfluxDB API:
+  URL: http://128.39.201.47:8086
+  Access: Accessible from anywhere on your network
+
+MQTT Broker (for ESP32 sensors):
+  IP: 192.168.4.1 (hotspot network)
+  Port: 1883
+  Access: Only accessible from devices connected to hotspot (wlan0)
+
+Localhost Access:
+  Grafana: http://localhost:3000
+  Traffic Monitor: http://localhost:8080
+  InfluxDB: http://localhost:8086
+
+Security Note:
+  These services are exposed on your LAN. For production use,
+  consider adding authentication and firewall rules.
+

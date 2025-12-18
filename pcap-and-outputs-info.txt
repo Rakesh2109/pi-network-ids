@@ -1,0 +1,94 @@
+PCAP Files and Output Types Information
+========================================
+
+PCAP FILE SAVING:
+-----------------
+
+CURRENT STATUS:
+- ❌ Suricata: NOT saving pcap files (only analyzing live traffic)
+- ❌ Zeek: NOT saving pcap files (only analyzing live traffic)
+
+WHY NO PCAP FILES:
+- Both are configured for LIVE ANALYSIS only
+- Traffic is analyzed in real-time
+- Logs contain extracted data (not raw packets)
+
+TO ENABLE PCAP SAVING:
+
+1. Suricata - Add to suricata.yaml:
+   ```yaml
+   pcap:
+     - interface: wlan0
+       file-cnt: 1
+       file-size: 100mb
+       filename: /var/log/suricata/pcap.pcap
+   ```
+
+2. Zeek - Already captures but not saving pcap directly
+   (Zeek analyzes and logs, not raw pcap)
+
+SURICATA OUTPUT TYPES (All Enabled):
+------------------------------------
+
+Currently configured in suricata.yaml:
+✅ alert      - Security alerts/attacks detected
+✅ flow       - Network connection flows
+✅ netflow    - Network flow summaries  
+✅ http       - HTTP requests/responses
+✅ dns        - DNS queries/responses
+✅ tls        - TLS/SSL handshakes
+✅ files      - File transfers
+✅ ssh        - SSH connections
+✅ stats      - Performance statistics
+
+TRAFFIC MONITOR NOW SHOWS:
+--------------------------
+✅ All Suricata event types (with filter dropdown)
+✅ Filter by: All, Alert, Flow, NetFlow, HTTP, DNS, TLS, SSH, Files
+✅ Each type shows relevant details:
+   - Flow: Packets/Bytes ↑↓
+   - HTTP: Method, Hostname, URL
+   - DNS: Query type, Domain name
+   - TLS: Subject, SNI
+   - Alerts: Signature name
+
+ZEEK LOG FILES AVAILABLE:
+-------------------------
+
+Current logs being generated:
+✅ conn.log       - All network connections
+✅ stats.log      - Zeek statistics
+✅ notice.log     - Security notices/alerts
+✅ packet_filter.log - Capture filter info
+✅ capture_loss.log  - Packet capture loss
+✅ loaded_scripts.log - Loaded modules
+
+Available but not yet populated (need traffic):
+⏳ http.log       - HTTP requests (when web traffic occurs)
+⏳ dns.log        - DNS queries (when DNS lookups occur)
+⏳ ssl.log        - SSL/TLS connections (when HTTPS occurs)
+
+TRAFFIC MONITOR SHOWS:
+---------------------
+✅ Zeek Connections (conn.log)
+✅ Zeek HTTP Requests (http.log - when available)
+
+TO SEE MORE ZEEK DATA:
+---------------------
+Generate traffic on hotspot network:
+- Browse websites → Creates http.log, dns.log
+- Use HTTPS → Creates ssl.log
+- Any connection → Creates conn.log entries
+
+ALL SURICATA DATA NOW VISIBLE:
+------------------------------
+Use the dropdown filter to see:
+- All Events (combined view)
+- Alerts only (security threats)
+- Flow only (connection tracking)
+- HTTP only (web traffic)
+- DNS only (domain lookups)
+- TLS only (encrypted connections)
+- SSH only (SSH sessions)
+- Files only (file transfers)
+
