@@ -62,6 +62,92 @@ docker compose up -d
 - Dashboards: 5 seconds
 - Traffic Monitor: 5 minutes
 
+## 💾 Data Storage
+
+### Network Captures (PCAP)
+- **Location**: `pcap/trace-YYYYMMDD-HHMMSS.pcap0`
+- **Format**: PCAP (Wireshark compatible)
+- **Rotation**: Every 1 hour
+- **Max Files**: 24 files (24 hours retention)
+- **Max Size**: 100MB per file
+- **Tool**: tshark (tcpdump)
+- **Interface**: wlan0 (WiFi hotspot)
+- **Export**: Download directly from web UI at http://128.39.201.47:8080
+
+### Suricata (IDS/IPS Alerts)
+- **Location**: `suricata/logs/`
+- **Main Log**: `eve.json` (JSON format)
+- **Contains**: Security alerts, network flows, HTTP, DNS, TLS, SSH events
+- **Format**: JSON Lines (one JSON object per line)
+- **Other Files**:
+  - `fast.log` - Alert summary (plain text)
+  - `stats.log` - Performance statistics
+- **Current Size**: ~40MB
+- **Retention**: 7 days (auto-cleanup)
+- **Export**: CSV/JSON via web UI at http://128.39.201.47:8080
+
+### Zeek (Network Analysis Logs)
+- **Location**: `zeek/logs/current/*.log`
+- **Format**: TSV (Tab-separated values with header)
+- **Log Files**:
+  - `conn.log` - All network connections (src/dst IP, ports, bytes, duration)
+  - `dhcp.log` - DHCP lease requests and assignments
+  - `dns.log` - DNS queries and responses (when present)
+  - `http.log` - HTTP requests and responses (when present)
+  - `ssl.log` - TLS/SSL handshakes and certificates (when present)
+  - `stats.log` - Zeek performance metrics
+  - `loaded_scripts.log` - Active Zeek analysis scripts
+- **Rotation**: Automatic daily rotation to dated folders (zeek/logs/YYYY-MM-DD/)
+- **Current Size**: ~4KB per log file
+- **Retention**: 7 days (auto-cleanup)
+- **Export**: CSV via web UI at http://128.39.201.47:8080
+
+### InfluxDB Metrics (Time-Series Database)
+- **Location**: `influxdb/data/`
+- **Format**: Internal InfluxDB storage (columnar)
+- **Buckets**:
+  - `system_metrics` - System monitoring data:
+    - CPU usage (per core and total)
+    - RAM usage (used, free, cached)
+    - Disk I/O (read/write bytes/sec)
+    - Network traffic (bytes/packets per interface)
+    - Docker container stats (CPU, memory, network per container)
+    - Hotspot stats (connected clients, RX/TX traffic on wlan0)
+    - Process counts
+  - `sensor_data` - ESP32 IoT sensor data from MQTT:
+    - Temperature, humidity, pressure
+    - Custom sensor readings
+- **Collection Interval**: Every 10 seconds
+- **Retention**: 30 days
+- **Query**: Grafana dashboards or `docker exec influxdb influx query`
+- **Visualize**: http://128.39.201.47:3000
+
+### Loki Logs (Centralized Logging)
+- **Location**: `loki/data/`
+- **Format**: Internal Loki chunks and index
+- **Contains**: Aggregated logs from all Docker services
+- **Storage**: 
+  - `chunks/` - Compressed log data
+  - `boltdb-shipper-active/` - Active index
+  - `wal/` - Write-ahead log
+- **Retention**: 7 days
+- **Query**: Grafana Explore (LogQL) at http://128.39.201.47:3000
+
+### MQTT Data
+- **Location**: `mqtt/log/mosquitto.log`
+- **Format**: Plain text log
+- **Contains**: MQTT broker connection logs, publish/subscribe events
+- **Retention**: 7 days
+
+### Traffic Monitor Exports
+- **CSV Exports**: Available via web interface
+- **JSON Exports**: Full event data with nested structures
+- **Access**: http://128.39.201.47:8080
+- **Export Types**:
+  - Suricata events (last 500) → CSV/JSON
+  - Zeek connections (last 500) → CSV
+  - Combined traffic data → JSON
+
 ## 🗑️ Maintenance
 
 ```bash

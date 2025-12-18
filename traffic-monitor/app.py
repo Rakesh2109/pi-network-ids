@@ -3,9 +3,11 @@ import os
 import json
 import glob
 import subprocess
+import csv
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_file, Response
 from flask_cors import CORS
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -812,6 +814,161 @@ def get_unit_for_field(field):
         'voc': 'ppb'
     }
     return units.get(field, '')
+
+@app.route('/api/export/suricata/csv')
+def export_suricata_csv():
+    """Export Suricata events to CSV"""
+    events = []
+    eve_file = os.path.join(SURICATA_LOG_DIR, "eve.json")
+    
+    if os.path.exists(eve_file):
+        try:
+            with open(eve_file, 'r') as f:
+                lines = f.readlines()
+                for line in lines[-500:]:
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                            if event.get('event_type') != 'stats':
+                                events.append(event)
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    if events:
+        # Get all unique keys
+        all_keys = set()
+        for event in events:
+            all_keys.update(event.keys())
+        
+        writer = csv.DictWriter(output, fieldnames=sorted(all_keys))
+        writer.writeheader()
+        for event in events:
+            # Flatten nested dicts
+            flat_event = {}
+            for k, v in event.items():
+                if isinstance(v, dict):
+                    flat_event[k] = json.dumps(v)
+                elif isinstance(v, list):
+                    flat_event[k] = json.dumps(v)
+                else:
+                    flat_event[k] = v
+            writer.writerow(flat_event)
+    
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=suricata_{timestamp}.csv'}
+    )
+
+@app.route('/api/export/zeek/csv')
+def export_zeek_csv():
+    """Export Zeek logs to CSV"""
+    all_data = []
+    
+    # Get connections
+    conn_files = glob.glob(os.path.join(ZEEK_LOG_DIR, "current/conn.log"))
+    if conn_files:
+        latest_file = max(conn_files, key=os.path.getmtime)
+        try:
+            with open(latest_file, 'r') as f:
+                for line in f:
+                    if line.strip() and not line.startswith('#'):
+                        parts = line.strip().split('\t')
+                        if len(parts) >= 10:
+                            try:
+                                all_data.append({
+                                    'type': 'connection',
+                                    'timestamp': parts[0],
+                                    'src_ip': parts[2],
+                                    'src_port': parts[3],
+                                    'dst_ip': parts[4],
+                                    'dst_port': parts[5],
+                                    'proto': parts[6],
+                                    'duration': parts[8],
+                                    'orig_bytes': parts[9],
+                                    'resp_bytes': parts[10] if len(parts) > 10 else '0',
+                                })
+                            except:
+                                pass
+        except Exception as e:
+            pass
+    
+    # Create CSV
+    output = io.StringIO()
+    if all_data:
+        writer = csv.DictWriter(output, fieldnames=['type', 'timestamp', 'src_ip', 'src_port', 'dst_ip', 'dst_port', 'proto', 'duration', 'orig_bytes', 'resp_bytes'])
+        writer.writeheader()
+        writer.writerows(all_data)
+    
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=zeek_{timestamp}.csv'}
+    )
+
+@app.route('/api/export/all/json')
+def export_all_json():
+    """Export all traffic data as JSON"""
+    data = {
+        'suricata': [],
+        'zeek': [],
+        'export_time': datetime.now().isoformat()
+    }
+    
+    # Get Suricata
+    eve_file = os.path.join(SURICATA_LOG_DIR, "eve.json")
+    if os.path.exists(eve_file):
+        try:
+            with open(eve_file, 'r') as f:
+                for line in f.readlines()[-500:]:
+                    if line.strip():
+                        try:
+                            event = json.loads(line)
+                            if event.get('event_type') != 'stats':
+                                data['suricata'].append(event)
+                        except:
+                            pass
+        except:
+            pass
+    
+    # Get Zeek
+    conn_files = glob.glob(os.path.join(ZEEK_LOG_DIR, "current/conn.log"))
+    if conn_files:
+        latest_file = max(conn_files, key=os.path.getmtime)
+        try:
+            with open(latest_file, 'r') as f:
+                for line in f:
+                    if line.strip() and not line.startswith('#'):
+                        parts = line.strip().split('\t')
+                        if len(parts) >= 10:
+                            try:
+                                data['zeek'].append({
+                                    'timestamp': parts[0],
+                                    'src_ip': parts[2],
+                                    'src_port': parts[3],
+                                    'dst_ip': parts[4],
+                                    'dst_port': parts[5],
+                                    'proto': parts[6],
+                                })
+                            except:
+                                pass
+        except:
+            pass
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return Response(
+        json.dumps(data, indent=2),
+        mimetype='application/json',
+        headers={'Content-Disposition': f'attachment; filename=traffic_{timestamp}.json'}
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)

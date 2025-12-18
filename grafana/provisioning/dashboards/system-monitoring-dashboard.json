@@ -1071,7 +1071,7 @@
             "type": "influxdb",
             "uid": "influxdb"
           },
-          "query": "from(bucket: \"system_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker\")\n  |> filter(fn: (r) => r[\"_field\"] == \"network_bytes_received\" or r[\"_field\"] == \"network_bytes_sent\")\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"container_name\", \"_field\"])\n  |> map(fn: (r) => ({r with container_name: r.container_name + \" \" + (if r._field == \"network_bytes_received\" then \"RX\" else \"TX\")}))\n  |> drop(columns: [\"_field\"])\n  |> group(columns: [\"container_name\"])",
+          "query": "from(bucket: \"system_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"docker_container_net\")\n  |> filter(fn: (r) => r[\"_field\"] == \"rx_bytes\" or r[\"_field\"] == \"tx_bytes\")\n  |> filter(fn: (r) => r[\"network\"] == \"total\")\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"container_name\", \"_field\"])\n  |> map(fn: (r) => ({r with container_name: r.container_name + \" \" + (if r._field == \"rx_bytes\" then \"RX\" else \"TX\")}))\n  |> drop(columns: [\"_field\"])\n  |> group(columns: [\"container_name\"])",
           "refId": "A"
         }
       ],
