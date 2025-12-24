@@ -113,7 +113,7 @@ services:
       - NET_ADMIN
       - NET_RAW
     command: >
-      tcpdump -i wlan0 -C 100 -W 10 -w /pcap/trace.pcap -n
+      sh -c "tcpdump -i wlan0 -nn -C 1024 -w /pcap/trace-$(date +%Y-%m-%d_%H-%M-%S).pcap"
     volumes:
       - ./pcap:/pcap
     restart: unless-stopped

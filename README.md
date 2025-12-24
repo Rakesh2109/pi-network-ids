@@ -25,8 +25,9 @@ A comprehensive Docker-based monitoring system for Raspberry Pi that collects ne
 
 - **Tcpdump** - Network packet capture tool
   - Interface: wlan0 (hotspot network)
-  - Output: `./pcap/trace.pcap`
-  - Rotation: 100MB files, 10 file rotation
+  - Output: `./pcap/trace-YYYY-MM-DD_HH-MM-SS.pcap` (timestamped filenames)
+  - Rotation: 1GB per file, unlimited files
+  - Format: Numeric addresses/ports (`-nn` flag)
 
 - **Darkstat** - Network traffic monitoring and statistics
   - Port: 667 (Web dashboard accessible at 128.39.201.47:667)
