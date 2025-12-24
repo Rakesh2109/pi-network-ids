@@ -115,14 +115,12 @@ The system is configured to monitor the `wlan0` interface (WiFi hotspot network)
 
 3. **Network Traffic:**
    - Network Interface (wlan0) → Tcpdump → PCAP files
-   - Network Interface (wlan0) → Darkstat → Real-time traffic statistics (Web UI, Docker)
-   - Network Interface (wlan0) → ntopng → Advanced flow monitoring (Web UI, native install for ARM64)
+   - Network Interface (wlan0) → ntopng → Advanced flow monitoring (Web UI)
 
 ## Access Points
 
 - **Grafana Dashboard:** http://128.39.201.47:3000
-- **Darkstat Network Monitor:** http://128.39.201.47:667
-- **ntopng Network Monitor:** http://128.39.201.47:3001 (if installed natively on host)
+- **ntopng Network Monitor:** http://128.39.201.47:3001 (default login: admin/admin)
 - **InfluxDB API:** http://localhost:8086
 - **MQTT Broker:** localhost:1883
 
