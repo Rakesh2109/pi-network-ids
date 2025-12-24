@@ -34,6 +34,12 @@ A comprehensive Docker-based monitoring system for Raspberry Pi that collects ne
   - Features: Real-time traffic stats per IP, protocol breakdown, bandwidth monitoring
   - ARM64 compatible (works on Raspberry Pi)
 
+- **ntopng** - Advanced real-time network traffic monitoring
+  - Port: 3001 (Web dashboard accessible at 128.39.201.47:3001)
+  - Interface: wlan0 (hotspot network)
+  - Features: Deep packet inspection, flow analysis, per-host/application statistics, network protocols breakdown
+  - ARM64 compatible (official multi-arch Docker image)
+
 ## Quick Start
 
 1. **Clone the repository:**
@@ -109,11 +115,13 @@ The system is configured to monitor the `wlan0` interface (WiFi hotspot network)
 
 3. **Network Traffic:**
    - Network Interface (wlan0) → Tcpdump → PCAP files
-   - Network Interface (wlan0) → Darkstat → Real-time flow monitoring (Web UI)
+   - Network Interface (wlan0) → ntopng → Advanced flow monitoring (Web UI)
+   - Network Interface (wlan0) → Darkstat → Real-time traffic statistics (Web UI)
 
 ## Access Points
 
 - **Grafana Dashboard:** http://128.39.201.47:3000
+- **ntopng Network Monitor:** http://128.39.201.47:3001 (default login: admin/admin)
 - **Darkstat Network Monitor:** http://128.39.201.47:667
 - **InfluxDB API:** http://localhost:8086
 - **MQTT Broker:** localhost:1883
