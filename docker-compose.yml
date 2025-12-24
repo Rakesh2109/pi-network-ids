@@ -122,6 +122,7 @@ services:
   # ntopng - Real-time network traffic monitoring (ARM64 supported)
   ntopng:
     image: ntop/ntopng:latest
+    platform: linux/arm64
     container_name: ntopng
     network_mode: host
     cap_add:
