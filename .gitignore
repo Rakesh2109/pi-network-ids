@@ -7,6 +7,7 @@ mqtt/data/
 mqtt/log/
 mqtt-collector/logs/
 pcap/*.pcap0
+pcap/*.pcap
 suricata/logs/
 zeek/logs/
 traffic-monitor/__pycache__/
