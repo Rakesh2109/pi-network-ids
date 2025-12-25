@@ -99,7 +99,8 @@ def on_message(client, userdata, msg):
                     return
                 
                 # Handle ESP32_PIR_IMU sensor data (combined PIR motion + IMU)
-                if data.get('sensor') == 'ESP32_PIR_IMU' or ('motion' in data and 'imu' in data):
+                # Check for sensor field first, then check for imu key (motion is optional)
+                if data.get('sensor') == 'ESP32_PIR_IMU' or 'imu' in data:
                     sensor_name = data.get('sensor', 'ESP32_PIR_IMU')
                     point = Point("esp32_pir_imu") \
                         .tag("sensor", sensor_name) \
