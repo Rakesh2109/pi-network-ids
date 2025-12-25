@@ -1474,6 +1474,707 @@
       ],
       "title": "Current Blood Oxygen",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "No Motion",
+                  "color": "gray"
+                },
+                "1": {
+                  "text": "Motion Detected",
+                  "color": "green"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 38
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and r._field == \"motion_detected\")\n  |> last()"
+        }
+      ],
+      "title": "🚶 PIR Motion Status",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 38
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and r._field == \"motion_count\")\n  |> last()"
+        }
+      ],
+      "title": "📊 Total Motion Count",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "Acceleration (m/s²)",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "accMS2",
+          "decimals": 2
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "accel_x"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "X-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "accel_y"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Y-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "accel_z"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Z-axis"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and (r._field == \"accel_x\" or r._field == \"accel_y\" or r._field == \"accel_z\"))\n  |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)"
+        }
+      ],
+      "title": "📊 ESP32 Accelerometer (3-Axis)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "Angular Velocity (°/s)",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "degree",
+          "decimals": 2
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_x"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "X-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_y"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Y-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gyro_z"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Z-axis"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 42
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and (r._field == \"gyro_x\" or r._field == \"gyro_y\" or r._field == \"gyro_z\"))\n  |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)"
+        }
+      ],
+      "title": "🔄 ESP32 Gyroscope (3-Axis)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "Magnetic Field (µT)",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "µT",
+          "decimals": 2
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mag_x"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "X-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mag_y"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Y-axis"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mag_z"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Z-axis"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 42
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and (r._field == \"mag_x\" or r._field == \"mag_y\" or r._field == \"mag_z\"))\n  |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)"
+        }
+      ],
+      "title": "🧲 ESP32 Magnetometer (3-Axis)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Temperature (°C)",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 40
+              }
+            ]
+          },
+          "unit": "celsius",
+          "decimals": 1
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean", "max"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and r._field == \"temperature\")\n  |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)"
+        }
+      ],
+      "title": "🌡️ ESP32 IMU Temperature",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Motion Count",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean", "max"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Flux",
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"esp32_pir_imu\" and r._field == \"motion_count\")\n  |> aggregateWindow(every: 1s, fn: last, createEmpty: false)"
+        }
+      ],
+      "title": "📈 Motion Count Trend",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",

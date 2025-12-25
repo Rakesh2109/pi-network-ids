@@ -71,7 +71,59 @@ def on_message(client, userdata, msg):
                     logger.info(f"Stored health data: topic={topic}, HR={data.get('heartRate')}, SpO2={data.get('oxygen')}")
                     return
                 
-                # Handle LSM9DS1 IMU sensor data with nested structure
+                # Handle ESP32_PIR_IMU sensor data (combined PIR motion + IMU)
+                if data.get('sensor') == 'ESP32_PIR_IMU' or ('motion' in data and 'imu' in data):
+                    sensor_name = data.get('sensor', 'ESP32_PIR_IMU')
+                    point = Point("esp32_pir_imu") \
+                        .tag("sensor", sensor_name) \
+                        .tag("topic", topic) \
+                        .time(time.time_ns())
+                    
+                    # PIR Motion Data
+                    if 'motion' in data and isinstance(data['motion'], dict):
+                        motion_data = data['motion']
+                        if 'motion_count' in motion_data:
+                            point = point.field("motion_count", int(motion_data['motion_count']))
+                        if 'motion_detected' in motion_data:
+                            # Convert boolean to int (0/1) for InfluxDB
+                            point = point.field("motion_detected", 1 if motion_data['motion_detected'] in [True, 'true', 'True', 1, '1'] else 0)
+                    
+                    # IMU Data (nested structure)
+                    if 'imu' in data and isinstance(data['imu'], dict):
+                        imu_data = data['imu']
+                        
+                        # Accelerometer data
+                        if 'accel' in imu_data and isinstance(imu_data['accel'], dict):
+                            point = point.field("accel_x", float(imu_data['accel'].get('x', 0)))
+                            point = point.field("accel_y", float(imu_data['accel'].get('y', 0)))
+                            point = point.field("accel_z", float(imu_data['accel'].get('z', 0)))
+                        
+                        # Gyroscope data
+                        if 'gyro' in imu_data and isinstance(imu_data['gyro'], dict):
+                            point = point.field("gyro_x", float(imu_data['gyro'].get('x', 0)))
+                            point = point.field("gyro_y", float(imu_data['gyro'].get('y', 0)))
+                            point = point.field("gyro_z", float(imu_data['gyro'].get('z', 0)))
+                        
+                        # Magnetometer data
+                        if 'mag' in imu_data and isinstance(imu_data['mag'], dict):
+                            point = point.field("mag_x", float(imu_data['mag'].get('x', 0)))
+                            point = point.field("mag_y", float(imu_data['mag'].get('y', 0)))
+                            point = point.field("mag_z", float(imu_data['mag'].get('z', 0)))
+                        
+                        # Temperature
+                        if 'temperature' in imu_data:
+                            point = point.field("temperature", float(imu_data['temperature']))
+                    
+                    # Store sensor timestamp if available
+                    if 'timestamp' in data:
+                        point = point.field("sensor_timestamp", float(data['timestamp']))
+                    
+                    # Write ESP32_PIR_IMU data to InfluxDB
+                    write_api.write(bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point)
+                    logger.info(f"Stored ESP32_PIR_IMU data: topic={topic}, motion_count={data.get('motion', {}).get('motion_count')}, temp={data.get('imu', {}).get('temperature')}")
+                    return
+                
+                # Handle LSM9DS1 IMU sensor data with nested structure (legacy format)
                 if 'accel' in data and 'gyro' in data and 'mag' in data:
                     # Create separate point for IMU data with all fields
                     point = Point("imu_sensors") \
