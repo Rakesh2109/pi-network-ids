@@ -186,8 +186,21 @@ def on_message(client, userdata, msg):
                         point = point.field("mag_z", float(data['mag'].get('z', 0)))
                     
                     # Temperature and heading
+                    # Check both 'temp' and 'temperature' field names
                     if 'temp' in data:
-                        point = point.field("temperature", float(data['temp']))
+                        temp_value = float(data['temp'])
+                        # Validate temperature is reasonable (between -50 and 100°C)
+                        if -50 <= temp_value <= 100:
+                            point = point.field("temperature", temp_value)
+                        else:
+                            logger.warning(f"Invalid temperature value {temp_value}°C for LSM9DS1, skipping")
+                    elif 'temperature' in data:
+                        temp_value = float(data['temperature'])
+                        # Validate temperature is reasonable (between -50 and 100°C)
+                        if -50 <= temp_value <= 100:
+                            point = point.field("temperature", temp_value)
+                        else:
+                            logger.warning(f"Invalid temperature value {temp_value}°C for LSM9DS1, skipping")
                     if 'heading' in data:
                         point = point.field("heading", float(data['heading']))
                     
