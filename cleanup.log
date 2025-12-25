@@ -49,3 +49,4 @@ Current disk usage:
 4.0K	/home/rakeshry/Pi_Server/mqtt-collector/logs
 
 Cleanup complete!
+/bin/sh: 1: /home/rakeshry/Pi_Server/cleanup-old-files.sh: not found
