@@ -145,7 +145,12 @@ def on_message(client, userdata, msg):
                             
                             # Temperature
                             if 'temperature' in imu_data:
-                                point = point.field("temperature", float(imu_data['temperature']))
+                                temp_value = float(imu_data['temperature'])
+                                # Validate temperature range
+                                if -50 <= temp_value <= 100: # Reasonable range for Celsius
+                                    point = point.field("temperature", temp_value)
+                                else:
+                                    logger.warning(f"Invalid temperature value {temp_value}°C for LSM9DS1, skipping")
                         
                         # Store sensor timestamp if available
                         if 'timestamp' in data:
@@ -299,4 +304,3 @@ while True:
         time.sleep(5)
 
 mqtt_client_instance.loop_forever()
-
