@@ -72,11 +72,15 @@ services:
       - HOST_MOUNT_PREFIX=/host
     volumes:
       - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./telegraf/data:/data/telegraf
+      - ./telegraf/start.sh:/start.sh:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/host/sys:ro
       - /proc:/host/proc:ro
       - /etc:/host/etc:ro
       - /:/host:ro
+    entrypoint: /bin/sh
+    command: /start.sh
     depends_on:
       - influxdb
     restart: unless-stopped
@@ -182,7 +186,12 @@ services:
   tcpdump:
     image: nicolaka/netshoot:latest
     container_name: tcpdump
-    command: sh -c 'exec tcpdump -i wlan0 -w /pcap/trace-$(date +\%Y\%m\%d-\%H\%M\%S).pcap -G 3600 -Z root'
+    environment:
+      - TZ=Europe/Oslo
+    command: >
+      sh -c 'apk add --no-cache tzdata >/dev/null 2>&1; export TZ=Europe/Oslo; 
+      FILENAME=/pcap/trace-$$(date +%Y-%m-%d_%H-%M-%S).pcap && 
+      tcpdump -i wlan0 -nn -C 1024 -w $$FILENAME'
     network_mode: host
     cap_add:
       - NET_ADMIN
@@ -203,7 +212,6 @@ services:
     volumes:
       - ./suricata/logs:/data/suricata:ro
       - ./zeek/logs:/data/zeek:ro
-      - ./pcap:/data/pcap:ro
     networks:
       - monitoring
     depends_on:
