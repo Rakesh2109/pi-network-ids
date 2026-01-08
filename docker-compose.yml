@@ -85,48 +85,13 @@ services:
       - influxdb
     restart: unless-stopped
 
-  # Loki - Log aggregation
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    user: "0:0"
-    environment:
-      - TZ=Europe/Oslo
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml -validation.allow-structured-metadata=false
-    volumes:
-      - ./loki/config:/etc/loki
-      - ./loki/data:/loki
-    networks:
-      - monitoring
-    restart: unless-stopped
-
-  # Promtail - Log shipper for Loki
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    volumes:
-      - ./promtail/config:/etc/promtail
-      - ./suricata/logs:/var/log/suricata:ro
-      - ./zeek/logs:/var/log/zeek:ro
-      - ./mqtt/log:/var/log/mqtt:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: -config.file=/etc/promtail/config.yml
-    networks:
-      - monitoring
-    restart: unless-stopped
-    depends_on:
-      - loki
-
   # Grafana - Visualization
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     user: "0:0"
     ports:
-      - "128.39.201.47:3000:3000"
+      - "0.0.0.0:3000:3000"
     environment:
       - TZ=Europe/Oslo
       - GF_SECURITY_ADMIN_USER=admin
@@ -140,47 +105,8 @@ services:
     networks:
       - monitoring
     depends_on:
-      - loki
       - influxdb
     restart: unless-stopped
-
-  # Suricata - Network IDS/IPS (Captures all hotspot traffic on wlan0)
-  suricata:
-    build: ./suricata
-    container_name: suricata
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-      - SYS_NICE
-    network_mode: host
-    volumes:
-      - ./suricata/config:/etc/suricata
-      - ./suricata/logs:/var/log/suricata
-      - ./suricata/rules:/var/lib/suricata/rules
-    environment:
-      - CAPTURE_INTERFACE=wlan0
-    restart: unless-stopped
-    privileged: true
-
-  # Zeek - Network analysis framework
-  zeek:
-    build: ./zeek
-    container_name: zeek
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-      - SYS_PTRACE
-    network_mode: host
-    volumes:
-      - ./zeek/config:/usr/local/zeek/etc
-      - ./zeek/logs:/usr/local/zeek/logs
-      - ./zeek/scripts:/usr/local/zeek/share/zeek/site/scripts
-    environment:
-      - TZ=Europe/Oslo
-      - CAPTURE_INTERFACE=wlan0
-      - ZEEK_LOG_PATH=/usr/local/zeek/logs
-    restart: unless-stopped
-    privileged: true
 
   # Tcpdump - PCAP capture for ALL hotspot traffic (wlan0)
   tcpdump:
@@ -201,30 +127,11 @@ services:
     restart: unless-stopped
     privileged: true
 
-  # Traffic Monitor - Dashboard for Suricata and Zeek
-  traffic-monitor:
-    build: ./traffic-monitor
-    container_name: traffic-monitor
-    environment:
-      - TZ=Europe/Oslo
-    ports:
-      - "128.39.201.47:8080:8080"
-    volumes:
-      - ./suricata/logs:/data/suricata:ro
-      - ./zeek/logs:/data/zeek:ro
-    networks:
-      - monitoring
-    depends_on:
-      - suricata
-      - zeek
-    restart: unless-stopped
-
 networks:
   monitoring:
     driver: bridge
 
 volumes:
   influxdb_data:
-  loki_data:
   grafana_data:
 

@@ -6,8 +6,8 @@ loki/data/
 mqtt/data/
 mqtt/log/
 mqtt-collector/logs/
-pcap/*.pcap0
-pcap/*.pcap
+# pcap/*.pcap0  # Allow pcap files in git
+# pcap/*.pcap   # Allow pcap files in git
 suricata/logs/
 zeek/logs/
 traffic-monitor/__pycache__/
@@ -32,3 +32,8 @@ env/
 venv/
 pcap_old/
 cleanup.log
+pcap_6_classes/
+"pcap fies /"/
+telegraf/data_files/
+telegraf/data_6_classes/
+# Exclude very large files and old data directories

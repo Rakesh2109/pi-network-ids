@@ -5,8 +5,9 @@ export TZ=Europe/Oslo
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 FILENAME="/data/telegraf/metrics-${DATE}.json"
 
-# Create the directory if it doesn't exist
+# Create the directory if it doesn't exist and set permissions
 mkdir -p /data/telegraf
+chmod 777 /data/telegraf
 
 # Update telegraf config with dated filename (create temp config)
 sed "s|files = \[\"/data/telegraf/.*\"\]|files = [\"${FILENAME}\"]|" /etc/telegraf/telegraf.conf > /tmp/telegraf.conf
